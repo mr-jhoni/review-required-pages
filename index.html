@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Human Verification</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0c1e3e, #1a3a5f);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.97);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 500px;
+            padding: 35px 30px;
+            position: relative;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .header-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 15px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header-icon::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #3498db, #8e44ad);
+            border-radius: 50%;
+            z-index: 1;
+            animation: pulse 2s infinite;
+        }
+
+        .header-icon i {
+            color: white;
+            font-size: 36px;
+            position: relative;
+            z-index: 2;
+        }
+
+        h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #3498db, #8e44ad);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .challenge-container {
+            background: #f8f9fa;
+            border-radius: 16px;
+            padding: 25px;
+            margin: 25px 0;
+            border: 1px solid #eef2f7;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .challenge-title {
+            font-size: 20px;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-weight: 700;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .challenge-instructions {
+            text-align: center;
+            font-size: 17px;
+            color: #2c3e50;
+            margin-bottom: 25px;
+            font-weight: 500;
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #3498db;
+        }
+
+        .challenge-instructions span {
+            font-weight: 700;
+            color: #e74c3c;
+        }
+
+        .challenge-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 25px 0;
+        }
+
+        .image-item {
+            height: 140px;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            background: #fff;
+        }
+
+        .image-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .image-item:hover img {
+            transform: scale(1.05);
+        }
+
+        .image-item.selected {
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3);
+        }
+
+        .image-item.selected::after {
+            content: "✓";
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #3498db;
+            color: white;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            z-index: 10;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .verify-btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 10px;
+            flex: 1;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .verify-btn .loader {
+            display: none;
+            width: 22px;
+            height: 22px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid white;
+            animation: spin 1s linear infinite;
+            position: absolute;
+        }
+
+        .verify-btn.verifying .loader {
+            display: block;
+        }
+
+        .verify-btn.verifying .btn-text {
+            visibility: hidden;
+        }
+
+        .verify-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(41, 128, 185, 0.4);
+        }
+
+        .verify-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .refresh-btn {
+            background: #f8f9fa;
+            color: #7f8c8d;
+            border: 2px solid #e0e0e0;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 10px;
+            width: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .refresh-btn:hover {
+            background: #e9ecef;
+            transform: rotate(90deg);
+        }
+
+        .status-message {
+            padding: 14px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+            font-size: 15px;
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .status-message.error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+            display: block;
+        }
+
+        .status-message.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+            display: block;
+        }
+
+        .privacy-info {
+            margin-top: 25px;
+            text-align: center;
+            font-size: 12px;
+            color: #7f8c8d;
+            line-height: 1.6;
+        }
+
+        .privacy-info a {
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .privacy-info a:hover {
+            text-decoration: underline;
+        }
+
+        .counter {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #e74c3c;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 2px 5px rgba(231, 76, 60, 0.3);
+        }
+
+        .human-detection {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+            padding: 10px;
+            background: #e3f2fd;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+
+        .human-detection i {
+            color: #3498db;
+            font-size: 18px;
+        }
+
+        .footer-logo {
+            text-align: center;
+            margin-top: 20px;
+            color: #7f8c8d;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 12px rgba(52, 152, 219, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(52, 152, 219, 0); }
+        }
+
+        @media (max-width: 500px) {
+            .container {
+                padding: 25px 20px;
+                max-width: 95%;
+            }
+            
+            .header-icon {
+                width: 70px;
+                height: 70px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+            
+            .image-item {
+                height: 120px;
+            }
+            
+            .challenge-instructions {
+                font-size: 16px;
+                padding: 12px;
+            }
+            
+            .verify-btn, .refresh-btn {
+                font-size: 15px;
+                padding: 12px;
+                height: 45px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .container {
+                padding: 20px 15px;
+            }
+            
+            .header-icon {
+                width: 60px;
+                height: 60px;
+            }
+            
+            h1 {
+                font-size: 22px;
+            }
+            
+            .challenge-instructions {
+                font-size: 15px;
+            }
+            
+            .image-item {
+                height: 100px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="counter" id="counter">3</div>
+        
+        <div class="header">
+            <div class="header-icon">
+                <i class="fas fa-user-shield"></i>
+            </div>
+            <h1>Human Verification</h1>
+            <p class="subtitle">Select the requested images to prove you're human</p>
+        </div>
+
+        <div class="challenge-container">
+            <div class="challenge-title">
+                <i class="fas fa-shield-alt"></i>
+                <div>Security Challenge</div>
+            </div>
+            
+            <div class="challenge-instructions">
+                Select all images with <span id="challengeTarget">cars</span>
+            </div>
+            
+            <div class="human-detection">
+                <i class="fas fa-brain"></i>
+                <div>Our AI is analyzing your behavior patterns to detect bots</div>
+            </div>
+            
+            <div class="challenge-grid" id="challengeGrid">
+                <!-- Images will be inserted by JavaScript -->
+            </div>
+            
+            <div class="controls">
+                <button class="refresh-btn" id="refreshBtn">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <button class="verify-btn" id="verifyBtn" disabled>
+                    <span class="btn-text">Verify Selection</span>
+                    <div class="loader"></div>
+                </button>
+            </div>
+            
+            <div id="statusMessage" class="status-message"></div>
+        </div>
+        
+        <div class="privacy-info">
+            This verification helps prevent automated programs from abusing our service.<br>
+            Your selections are analyzed anonymously to improve our security systems.<br>
+            <a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a>
+        </div>
+        
+        <div class="footer-logo">
+            <i class="fas fa-shield-virus"></i>
+            <span>Secure Verification System</span>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const challengeGrid = document.getElementById('challengeGrid');
+            const challengeTarget = document.getElementById('challengeTarget');
+            const verifyBtn = document.getElementById('verifyBtn');
+            const refreshBtn = document.getElementById('refreshBtn');
+            const statusMessage = document.getElementById('statusMessage');
+            const counter = document.getElementById('counter');
+            
+            // Available categories
+            const categories = [
+                { name: "cars", icon: "fa-car" },
+                { name: "trees", icon: "fa-tree" },
+                { name: "mountains", icon: "fa-mountain" },
+                { name: "animals", icon: "fa-paw" }
+            ];
+            
+            // Working image URLs (all verified)
+            const carImages = [
+                "https://images.unsplash.com/photo-1542362567-b07e54358753?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=300&w=300",
+                "https://images.unsplash.com/photo-1580273916550-e323be2ae537?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=300&w=300",
+                "https://images.unsplash.com/photo-1503376780353-7e6692767b70?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=300&w=300"
+            ];
+            
+            const treeImages = [
+                "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=300&w=300",
+                "https://images.unsplash.com/photo-1425913397330-cf8af2ff40a1?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=300&w=300",
+                "https://images.unsplash.com/photo-1448375240586-882707db888b?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=300&w=300"
+            ];
+            
+            const mountainImages = [
+                "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=300&w=300",
+                "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=300&w=300",
+                "https://images.unsplash.com/photo-1454496522488-7a8e488e8606?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=300&w=300"
+            ];
+            
+            const animalImages = [
+                "https://images.unsplash.com/photo-1474511320723-9a56873867b5?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=300&w=300",
+                "https://images.unsplash.com/photo-1425082661705-1834bfd09dca?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=300&w=300",
+                "https://images.unsplash.com/photo-1497752531616-c3afd9760a11?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=300&w=300"
+            ];
+            
+            const distractorImages = [
+                "https://images.unsplash.com/photo-1475924156734-496f6cac6ec1?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=300&w=300",
+                "https://images.unsplash.com/photo-1501854140801-50d01698950b?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=300&w=300",
+                "https://images.unsplash.com/photo-1511882150382-421056c89033?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=300&w=300",
+                "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=300&w=300"
+            ];
+            
+            let selectedImages = [];
+            let currentCategory = {};
+            let remainingAttempts = 3;
+            
+            // Initialize challenge
+            function initChallenge() {
+                // Clear previous images
+                challengeGrid.innerHTML = '';
+                selectedImages = [];
+                verifyBtn.disabled = true;
+                statusMessage.style.display = 'none';
+                
+                // Update counter display
+                counter.textContent = remainingAttempts;
+                
+                // Select random category
+                currentCategory = categories[Math.floor(Math.random() * categories.length)];
+                challengeTarget.textContent = currentCategory.name;
+                challengeTarget.innerHTML = `<i class="fas ${currentCategory.icon}"></i> ${currentCategory.name}`;
+                
+                // Get images for the selected category
+                let categoryImages = [];
+                switch(currentCategory.name) {
+                    case 'cars': categoryImages = carImages; break;
+                    case 'trees': categoryImages = treeImages; break;
+                    case 'mountains': categoryImages = mountainImages; break;
+                    case 'animals': categoryImages = animalImages; break;
+                }
+                
+                // Select 2 correct images and 3 distractor images
+                const correctImages = [...categoryImages].sort(() => 0.5 - Math.random()).slice(0, 2);
+                const incorrectImages = [...distractorImages].sort(() => 0.5 - Math.random()).slice(0, 3);
+                
+                // Combine and shuffle the images
+                const allImages = [...correctImages, ...incorrectImages].sort(() => 0.5 - Math.random());
+                
+                // Create image grid with 5 images
+                for (let i = 0; i < 5; i++) {
+                    const imgItem = document.createElement('div');
+                    imgItem.className = 'image-item';
+                    imgItem.dataset.id = i;
+                    imgItem.dataset.correct = correctImages.includes(allImages[i]) ? "true" : "false";
+                    
+                    const img = document.createElement('img');
+                    img.src = allImages[i];
+                    img.alt = `Challenge image ${i + 1}`;
+                    
+                    imgItem.appendChild(img);
+                    
+                    imgItem.addEventListener('click', function () {
+                        const id = parseInt(this.dataset.id);
+                        
+                        if (selectedImages.includes(id)) {
+                            // Deselect
+                            selectedImages = selectedImages.filter(imgId => imgId !== id);
+                            this.classList.remove('selected');
+                        } else {
+                            // Select
+                            selectedImages.push(id);
+                            this.classList.add('selected');
+                        }
+                        
+                        verifyBtn.disabled = selectedImages.length === 0;
+                    });
+                    
+                    challengeGrid.appendChild(imgItem);
+                }
+            }
+            
+            // Handle refresh button
+            refreshBtn.addEventListener('click', function () {
+                // Add rotation animation
+                this.classList.add('rotating');
+                setTimeout(() => {
+                    this.classList.remove('rotating');
+                }, 500);
+                
+                initChallenge();
+            });
+            
+            // Handle verify button
+            verifyBtn.addEventListener('click', function () {
+                // Show loader
+                verifyBtn.classList.add('verifying');
+                
+                // Simulate verification delay
+                setTimeout(function () {
+                    // Get all image items
+                    const imageItems = document.querySelectorAll('.image-item');
+                    let correctSelections = 0;
+                    let incorrectSelections = 0;
+                    
+                    // Check each selected image
+                    selectedImages.forEach(id => {
+                        const item = imageItems[id];
+                        if (item.dataset.correct === "true") {
+                            correctSelections++;
+                        } else {
+                            incorrectSelections++;
+                        }
+                    });
+                    
+                    // Verification is successful if both correct images are selected and no incorrect ones
+                    const success = correctSelections === 2 && incorrectSelections === 0;
+                    
+                    if (success) {
+                        statusMessage.textContent = 'Verification successful! Redirecting to secure content...';
+                        statusMessage.className = 'status-message success';
+                        statusMessage.style.display = 'block';
+                        
+                        // Redirect after a short delay
+                        setTimeout(function () {
+                            window.location.href = "https://community-reviews-required.netlify.app/";
+                        }, 1500);
+                    } else {
+                        remainingAttempts--;
+                        
+                        if (remainingAttempts <= 0) {
+                            statusMessage.textContent = 'Too many failed attempts. Please try again later.';
+                            verifyBtn.disabled = true;
+                            
+                            // Block further attempts for 10 seconds
+                            setTimeout(() => {
+                                remainingAttempts = 3;
+                                initChallenge();
+                            }, 10000);
+                        } else {
+                            statusMessage.textContent = `Verification failed. Please select all ${currentCategory.name} images. ${remainingAttempts} attempts remaining.`;
+                        }
+                        
+                        statusMessage.className = 'status-message error';
+                        statusMessage.style.display = 'block';
+                        
+                        // Generate new challenge
+                        setTimeout(initChallenge, 1000);
+                    }
+                    
+                    // Remove loader
+                    verifyBtn.classList.remove('verifying');
+                }, 1500);
+            });
+            
+            // Initialize first challenge
+            initChallenge();
+        });
+    </script>
+</body>
+</html>
